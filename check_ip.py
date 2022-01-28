@@ -1,4 +1,5 @@
 # Code from https://gist.github.com/slayton/3913056
+# Does not work as of 1 am 28 Jan 2022
 
 #!/usr/bin/python
 from subprocess import Popen, PIPE
@@ -27,7 +28,7 @@ RECEIVER['addr'] = [ 'zn22@ic.ac.uk' ];
 INTERFACE = 'eth0' # default interface for a Raspberry Pi
 
 # specify the name of the computer to display in the email
-HOSTNAME = Popen(['hostname'], stdout=PIPE).communicate()[0].replace('\n', '')
+HOSTNAME = Popen(['COM7'], stdout=PIPE).communicate()[0].replace('\n', '')
 
 #######################################################################
 

@@ -8,17 +8,25 @@ import numpy as np
 # for I2C use:
 from adafruit_as726x import AS726x_I2C
 
-# for UART use:
-# from adafruit_as726x import AS726x_UART
+# # for UART use:
+# # from adafruit_as726x import AS726x_UART
 
 # maximum value for sensor reading
 max_val = 16000
 
-# max number of characters in each graph
-max_graph = 80
+# # max number of characters in each graph
+# max_graph = 80
 
-harmfulThreshold = 0.2
-harmfulMask = np.array([1,1,0,0,0,0],dtype=np.bool) # violet and blue are harmful
+user = 'general' #'specialized'
+userDict = {'specialized': 0, 'general': 1}
+
+HEVThresholdList = [0.05, 0.2] # HEV = High Energy Visible Light; 0: low, 1: high
+LightThresholdList = [0.2,0.4]
+
+HEVThresholdValue = HEVThresholdList[userDict[user]]
+LightThresholdValue = LightThresholdList[userDict[user]]
+
+harmfulHEVMask = np.array([1,1,0,0,0,0],dtype=np.bool) # violet and blue are HEV
 
 # def graph_map(x):
 #     return min(int(x * max_graph / max_val), max_graph)
@@ -34,11 +42,12 @@ while True:
         time.sleep(0.1)
 
     lightValues = np.array([sensor.violet, sensor.blue, sensor.green, sensor.yellow, sensor.orange, sensor.red])
-    harmfulLightIntensity = sum(lightValues[harmfulMask])/sum(lightValues)
-    
-    print(harmfulLightIntensity)
+    harmfulHEVIntensity = sum(lightValues[harmfulHEVMask])/sum(lightValues)
+    overallLightIntensity = sum(lightValues)/
 
-    
+    if harmfulHEVIntensity > HEVThresholdValue:
+        print('WARNING! Turn on Night Light Mode')
+    if overallLightIntensity > LightThresholdValue:
     
     # plot plot the data
     # print("\n")

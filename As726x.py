@@ -43,12 +43,15 @@ while True:
 
     lightValues = np.array([sensor.violet, sensor.blue, sensor.green, sensor.yellow, sensor.orange, sensor.red])
     harmfulHEVIntensity = sum(lightValues[harmfulHEVMask])/sum(lightValues)
-    overallLightIntensity = sum(lightValues)/
+    overallLightIntensity = min(sum(lightValues)/(5*max_val),1)
+    print(f'Light Intensity: {overallLightIntensity}; HEV Intensity: {harmfulHEVIntensity}.\n')
 
     if harmfulHEVIntensity > HEVThresholdValue:
-        print('WARNING! Turn on Night Light Mode')
+        print('WARNING! Turn on Night Light Mode NOW! \n')
     if overallLightIntensity > LightThresholdValue:
+        print('WARNING! Turn down Screen Brightness NOW! \n')
     
+       
     # plot plot the data
     # print("\n")
     # print("V: " + str(graph_map(sensor.violet))) # * "=")

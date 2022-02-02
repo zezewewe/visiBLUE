@@ -42,6 +42,7 @@ while True:
         time.sleep(0.1)
 
     lightValues = np.array([sensor.violet, sensor.blue, sensor.green, sensor.yellow, sensor.orange, sensor.red])
+    print(lightValues)
     harmfulHEVIntensity = sum(lightValues[harmfulHEVMask])/sum(lightValues)
     overallLightIntensity = min(sum(lightValues)/(5*max_val),1)
     print(f'Light Intensity: {overallLightIntensity}; HEV Intensity: {harmfulHEVIntensity}.\n')

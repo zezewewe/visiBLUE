@@ -3,6 +3,7 @@
 
 import time
 import board
+import numpy as np
 
 # for I2C use:
 from adafruit_as726x import AS726x_I2C
@@ -16,14 +17,15 @@ max_val = 16000
 # max number of characters in each graph
 max_graph = 80
 
+harmfulThreshold = 0.2
+harmfulMask = np.array([1,1,0,0,0,0],dtype=np.bool) # violet and blue are harmful
 
-def graph_map(x):
-    return min(int(x * max_graph / max_val), max_graph)
+# def graph_map(x):
+#     return min(int(x * max_graph / max_val), max_graph)
 
 # for I2C use:
 i2c = board.I2C()
 sensor = AS726x_I2C(i2c)
-
 sensor.conversion_mode = sensor.MODE_2
 
 while True:
@@ -32,7 +34,11 @@ while True:
         time.sleep(0.1)
 
     lightValues = [sensor.violet, sensor.blue, sensor.green, sensor.yellow, sensor.orange, sensor.red]
-    print(lightValues, '/n')
+    harmfulLightIntensity = sum(lightValues[harmfulMask])/sum(lightValues)
+    
+    print(harmfulLightIntensity)
+
+    
     
     # plot plot the data
     # print("\n")

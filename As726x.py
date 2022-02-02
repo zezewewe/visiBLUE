@@ -33,7 +33,7 @@ while True:
     while not sensor.data_ready:
         time.sleep(0.1)
 
-    lightValues = [sensor.violet, sensor.blue, sensor.green, sensor.yellow, sensor.orange, sensor.red]
+    lightValues = np.array([sensor.violet, sensor.blue, sensor.green, sensor.yellow, sensor.orange, sensor.red])
     harmfulLightIntensity = sum(lightValues[harmfulMask])/sum(lightValues)
     
     print(harmfulLightIntensity)

@@ -20,8 +20,8 @@ max_val = 16000
 user = 'general' #'specialized'
 userDict = {'specialized': 0, 'general': 1}
 
-HEVThresholdList = [0.05, 0.2] # HEV = High Energy Visible Light; 0: low, 1: high
-LightThresholdList = [0.2,0.4]
+HEVThresholdList = [0.25, 0.4] # HEV = High Energy Visible Light; 0: low, 1: high
+LightThresholdList = [0.3,0.6]
 
 HEVThresholdValue = HEVThresholdList[userDict[user]]
 LightThresholdValue = LightThresholdList[userDict[user]]

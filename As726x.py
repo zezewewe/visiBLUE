@@ -2,8 +2,15 @@
 # SPDX-License-Identifier: MIT
 
 import time
+import datetime
 import board
 import numpy as np
+import json
+import paho.mqtt.client as mqtt
+
+# set up MQTT 
+client = mqtt.Client()
+client.connect("test.mosquitto.org",port=1883) # returns 0 if successful
 
 # for I2C use:
 from adafruit_as726x import AS726x_I2C
@@ -41,6 +48,7 @@ while True:
     while not sensor.data_ready:
         time.sleep(0.1)
 
+    timeNow = datetime.datetime.now.strftime("%d-%b-%y %H:%M")
     lightValues = np.array([sensor.violet, sensor.blue, sensor.green, sensor.yellow, sensor.orange, sensor.red])
     print(lightValues)
     harmfulHEVIntensity = sum(lightValues[harmfulHEVMask])/sum(lightValues)
@@ -51,6 +59,16 @@ while True:
         print('WARNING! Turn on Night Light Mode NOW! \n')
     if overallLightIntensity > LightThresholdValue:
         print('WARNING! Turn down Screen Brightness NOW! \n')
+
+    dataPackageDict = {
+        "TimeNow": timeNow,
+        "LightIntensity": overallLightIntensity,
+        "HEVIntensity": harmfulHEVIntensity
+    }
+
+    dataPackageJson = json.dumps(dataPackageDict)
+    
+    MSG_INFO = client.publish("IC.embedded/GOEL/test",dataPackageJson)
     
        
     # plot plot the data
@@ -62,4 +80,5 @@ while True:
     # print("O: " + str(graph_map(sensor.orange))) # * "=")
     # print("R: " + str(graph_map(sensor.red))) # * "=")
 
-    time.sleep(1)
+    time.sleep(30)
+

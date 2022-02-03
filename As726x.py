@@ -1,3 +1,4 @@
+
 # SPDX-FileCopyrightText: 2020 ladyada for Adafruit Industries
 # SPDX-License-Identifier: MIT
 
@@ -48,7 +49,7 @@ while True:
     while not sensor.data_ready:
         time.sleep(0.1)
 
-    timeNow = datetime.datetime.now.strftime("%d-%b-%y %H:%M")
+    timeNow = datetime.datetime.now().strftime("%d-%b-%y %H:%M:%S")
     lightValues = np.array([sensor.violet, sensor.blue, sensor.green, sensor.yellow, sensor.orange, sensor.red])
     print(lightValues)
     harmfulHEVIntensity = sum(lightValues[harmfulHEVMask])/sum(lightValues)

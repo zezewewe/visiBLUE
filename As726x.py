@@ -35,7 +35,7 @@ normalizedStdDevThresholdValue = 100 # param to decide natural or screen light
 maxSensorReading = 16000 # maximum value for sensor reading
 
 sensorReadFrequency = 1 # min
-piPublishFrequency = 15 # min
+piPublishFrequency = 15 # times
 piCounter = 0
 
 HEVTmpVar = 0
@@ -54,14 +54,14 @@ def checkHEVLevel(lightValues):
     harmfulHEVIntensity = sum(lightValues[harmfulHEVMask])/sum(lightValues)
     print(harmfulHEVIntensity)
     if harmfulHEVIntensity > HEVThresholdValue:
-        print('Send Telgram HEV Alert!\n')
+        print('Send Telgram HEV Alert!')
     return harmfulHEVIntensity
 
 def checkIntensityLevel(lightValues):
     overallLightIntensity = min(sum(lightValues)/(5*maxSensorReading),1)
     print(overallLightIntensity)
     if overallLightIntensity > LightThresholdValue:
-        print('Send Telegram Brightness Alert!\n')
+        print('Send Telegram Brightness Alert!')
     return overallLightIntensity
 
 # process raw data
@@ -89,7 +89,7 @@ while True:
     # Check levels and send immediate alerts if required
     harmfulHEVIntensity=checkHEVLevel(lightValues)
     overallLightIntensity=checkIntensityLevel(lightValues)
-    print(f'Light Intensity: {overallLightIntensity}; HEV Intensity: {harmfulHEVIntensity}.\n')
+    #print(f'Light Intensity: {overallLightIntensity}; HEV Intensity: {harmfulHEVIntensity}.\n')
 
     # Log and process data
     prepareData(harmfulHEVIntensity,overallLightIntensity)
@@ -105,6 +105,7 @@ while True:
         # publish data
         dataPackageJson = json.dumps(dataPackageDict)
         MSG_INFO = client.publish(MqttTopic,dataPackageJson)
+        print('Published')
 
         # reset tmp variables
         HEVTmpVar = 0

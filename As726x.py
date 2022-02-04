@@ -52,12 +52,14 @@ def identifyNaturalLight(lightValues):
 # obtain HEV Level and Intensity Levels, and send Alerts if required
 def checkHEVLevel(lightValues):
     harmfulHEVIntensity = sum(lightValues[harmfulHEVMask])/sum(lightValues)
+    print(harmfulHEVIntensity)
     if harmfulHEVIntensity > HEVThresholdValue:
         print('Send Telgram HEV Alert!\n')
     return harmfulHEVIntensity
 
 def checkIntensityLevel(lightValues):
     overallLightIntensity = min(sum(lightValues)/(5*maxSensorReading),1)
+    print(overallLightIntensity)
     if overallLightIntensity > LightThresholdValue:
         print('Send Telegram Brightness Alert!\n')
     return overallLightIntensity
@@ -67,8 +69,7 @@ def prepareData(harmfulHEVIntensity,overallLightIntensity):
     global HEVTmpVar, IntensityTmpVar
     HEVTmpVar = max(HEVTmpVar,harmfulHEVIntensity)
     IntensityTmpVar += overallLightIntensity
-
-    
+    print(HEVTmpVar,IntensityTmpVar)
 
 
 while True:

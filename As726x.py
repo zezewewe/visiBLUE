@@ -1,4 +1,3 @@
-
 # SPDX-FileCopyrightText: 2020 ladyada for Adafruit Industries
 # SPDX-License-Identifier: MIT
 
@@ -11,75 +10,105 @@ import paho.mqtt.client as mqtt
 
 # set up MQTT 
 client = mqtt.Client()
+client.tls_set(ca_certs="mosquitto.org.crt",certfile="client.crt",keyfile="client.key")
 client.connect("test.mosquitto.org",port=1883) # returns 0 if successful
 
-# for I2C use:
+MqttTopic = "IC.embedded/GOEL/test"
+
+# set up I2C:
 from adafruit_as726x import AS726x_I2C
+i2c = board.I2C()
+sensor = AS726x_I2C(i2c)
+sensor.conversion_mode = sensor.MODE_2
 
-# # for UART use:
-# # from adafruit_as726x import AS726x_UART
 
-# maximum value for sensor reading
-max_val = 16000
-
-# # max number of characters in each graph
-# max_graph = 80
-
+# Tuneable parameters
 user = 'general' #'specialized'
 userDict = {'specialized': 0, 'general': 1}
 
 HEVThresholdList = [0.25, 0.4] # HEV = High Energy Visible Light; 0: low, 1: high
 LightThresholdList = [0.3,0.6]
-
-HEVThresholdValue = HEVThresholdList[userDict[user]]
+HEVThresholdValue = HEVThresholdList[userDict[user]] 
 LightThresholdValue = LightThresholdList[userDict[user]]
+
+normalizedStdDevThresholdValue = 100 # param to decide natural or screen light
+maxSensorReading = 16000 # maximum value for sensor reading
+
+sensorReadFrequency = 1 # min
+piPublishFrequency = 15 # min
+piCounter = 0
+
+HEVTmpVar = 0
+IntensityTmpVar = 0
 
 harmfulHEVMask = np.array([1,1,0,0,0,0],dtype=np.bool) # violet and blue are HEV
 
-# def graph_map(x):
-#     return min(int(x * max_graph / max_val), max_graph)
+# screen vs natural light
+def identifyNaturalLight(lightValues):
+    '''Takes in array of 6 frequencies from sensor; Outputs whether light is natural or artifical.'''
+    normalizedStdDev = np.std(lightValues)/np.mean(lightValues)
+    return normalizedStdDev < normalizedStdDevThresholdValue # True if Natural light
 
-# for I2C use:
-i2c = board.I2C()
-sensor = AS726x_I2C(i2c)
-sensor.conversion_mode = sensor.MODE_2
+# obtain HEV Level and Intensity Levels, and send Alerts if required
+def checkHEVLevel(lightValues):
+    harmfulHEVIntensity = sum(lightValues[harmfulHEVMask])/sum(lightValues)
+    if harmfulHEVIntensity > HEVThresholdValue:
+        print('Send Telgram HEV Alert!\n')
+    return harmfulHEVIntensity
+
+def checkIntensityLevel(lightValues):
+    overallLightIntensity = min(sum(lightValues)/(5*maxSensorReading),1)
+    if overallLightIntensity > LightThresholdValue:
+        print('Send Telegram Brightness Alert!\n')
+    return overallLightIntensity
+
+# process raw data
+def prepareData(harmfulHEVIntensity,overallLightIntensity):
+    global HEVTmpVar, IntensityTmpVar
+    HEVTmpVar = max(HEVTmpVar,harmfulHEVIntensity)
+    IntensityTmpVar += overallLightIntensity
+
+    
+
 
 while True:
     # Wait for data to be ready
     while not sensor.data_ready:
         time.sleep(0.1)
+    timeNow = datetime.datetime.now.strftime("%d-%b-%y %H:%M")
+    piCounter += 1
+    print(f"Count Value is now: {piCounter}.")
 
-    timeNow = datetime.datetime.now().strftime("%d-%b-%y %H:%M:%S")
     lightValues = np.array([sensor.violet, sensor.blue, sensor.green, sensor.yellow, sensor.orange, sensor.red])
     print(lightValues)
-    harmfulHEVIntensity = sum(lightValues[harmfulHEVMask])/sum(lightValues)
-    overallLightIntensity = min(sum(lightValues)/(5*max_val),1)
+
+    # harmfulHEVIntensity = sum(lightValues[harmfulHEVMask])/sum(lightValues)
+    # overallLightIntensity = min(sum(lightValues)/(5*maxSensorReading),1)
+
+    # Check levels and send immediate alerts if required
+    harmfulHEVIntensity=checkHEVLevel(lightValues)
+    overallLightIntensity=checkIntensityLevel(lightValues)
     print(f'Light Intensity: {overallLightIntensity}; HEV Intensity: {harmfulHEVIntensity}.\n')
 
-    if harmfulHEVIntensity > HEVThresholdValue:
-        print('WARNING! Turn on Night Light Mode NOW! \n')
-    if overallLightIntensity > LightThresholdValue:
-        print('WARNING! Turn down Screen Brightness NOW! \n')
-
-    dataPackageDict = {
-        "TimeNow": timeNow,
-        "LightIntensity": overallLightIntensity,
-        "HEVIntensity": harmfulHEVIntensity
-    }
-
-    dataPackageJson = json.dumps(dataPackageDict)
+    # Log and process data
+    prepareData(harmfulHEVIntensity,overallLightIntensity)
     
-    MSG_INFO = client.publish("IC.embedded/GOEL/test",dataPackageJson)
-    
-       
-    # plot plot the data
-    # print("\n")
-    # print("V: " + str(graph_map(sensor.violet))) # * "=")
-    # print("B: " + str(graph_map(sensor.blue))) # * "=")
-    # print("G: " + str(graph_map(sensor.green))) # * "=")
-    # print("Y: " + str(graph_map(sensor.yellow))) # * "=")
-    # print("O: " + str(graph_map(sensor.orange))) # * "=")
-    # print("R: " + str(graph_map(sensor.red))) # * "=")
 
-    time.sleep(30)
+    if piCounter == piPublishFrequency:
+        dataPackageDict = {
+            "TimeNow": timeNow,
+            "HEVIntensity": HEVTmpVar,
+            "LightIntensity": IntensityTmpVar,
+        }
+        
+        # publish data
+        dataPackageJson = json.dumps(dataPackageDict)
+        MSG_INFO = client.publish(MqttTopic,dataPackageJson)
+
+        # reset tmp variables
+        HEVTmpVar = 0
+        IntensityTmpVar = 0
+
+
+    time.sleep(sensorReadFrequency)
 

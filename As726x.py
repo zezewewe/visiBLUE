@@ -11,7 +11,7 @@ import paho.mqtt.client as mqtt
 # set up MQTT 
 client = mqtt.Client()
 client.tls_set(ca_certs="mosquitto.org.crt",certfile="client.crt",keyfile="client.key")
-client.connect("test.mosquitto.org",port=1883) # returns 0 if successful
+client.connect("test.mosquitto.org",port=8884) # returns 0 if successful
 
 MqttTopic = "IC.embedded/GOEL/test"
 
@@ -75,7 +75,7 @@ while True:
     # Wait for data to be ready
     while not sensor.data_ready:
         time.sleep(0.1)
-    timeNow = datetime.datetime.now.strftime("%d-%b-%y %H:%M")
+    timeNow = datetime.datetime.now().strftime("%d-%b-%y %H:%M")
     piCounter += 1
     print(f"Count Value is now: {piCounter}.")
 
@@ -108,7 +108,7 @@ while True:
         # reset tmp variables
         HEVTmpVar = 0
         IntensityTmpVar = 0
-
+        piCounter = 0
 
     time.sleep(sensorReadFrequency)
 

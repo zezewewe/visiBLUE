@@ -1,3 +1,4 @@
+
 # SPDX-FileCopyrightText: 2020 ladyada for Adafruit Industries
 # SPDX-License-Identifier: MIT
 
@@ -9,7 +10,6 @@ import json
 import paho.mqtt.client as mqtt
 import telebot
 import os
-from datetime import datetime
 
 # ====== Set up telegram bot ======
 
@@ -39,7 +39,7 @@ patientUser_file.close()
 pat_bot = telebot.TeleBot(token=pat_bot_ID)
 
 # Last sent message
-lastsent_time = datetime.now()
+lastsent_time = datetime.datetime.now()
 
 # Limit frequency of messages
 seconds_from_last_msg = 10
@@ -47,11 +47,11 @@ seconds_from_last_msg = 10
 # ====== End Set up telegram bot ======
 
 # set up MQTT 
-client = mqtt.Client()
-client.tls_set(ca_certs="mosquitto.org.crt",certfile="client.crt",keyfile="client.key")
-client.connect("test.mosquitto.org",port=8884) # returns 0 if successful
+#client = mqtt.Client()
+#client.tls_set(ca_certs="mosquitto.org.crt",certfile="client.crt",keyfile="client.key")
+#client.connect("test.mosquitto.org",port=8884) # returns 0 if successful
 
-MqttTopic = "IC.embedded/GOEL/test"
+#MqttTopic = "IC.embedded/GOEL/test"
 
 # set up I2C:
 from adafruit_as726x import AS726x_I2C
@@ -89,10 +89,10 @@ def message_limiter(sendrequest_time, lastsent_time):
         return 0
 
 def send_tele_message(userID_list, message):
-    global lastsent_time
-    messagesend_time = datetime.now()
+    #global lastsent_time
+    messagesend_time = datetime.datetime.now()
     if message_limiter(messagesend_time, lastsent_time):
-        lastsent_time = messagesend_time
+        #lastsent_time = messagesend_time
         for userID in userID_list:
             pat_bot.send_message(userID, message)
 
@@ -108,6 +108,8 @@ def checkHEVLevel(lightValues):
     print(harmfulHEVIntensity)
     if (harmfulHEVIntensity > HEVThresholdValue):
         send_tele_message(norm_user_IDs, 'High blue light intensity alert!')
+        send_tele_message(pat_user_IDs, 'High blue light intensity alert!')
+        #lastsent_time = messagesend_time
     return harmfulHEVIntensity
 
 def checkIntensityLevel(lightValues):
@@ -157,7 +159,7 @@ while True:
         
         # publish data
         dataPackageJson = json.dumps(dataPackageDict)
-        MSG_INFO = client.publish(MqttTopic,dataPackageJson)
+        #MSG_INFO = client.publish(MqttTopic,dataPackageJson)
         print('Published')
 
         # reset tmp variables

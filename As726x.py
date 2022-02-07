@@ -7,6 +7,44 @@ import board
 import numpy as np
 import json
 import paho.mqtt.client as mqtt
+import telebot
+import os
+from datetime import datetime
+
+# ====== Set up telegram bot ======
+
+# Depending on OS type, the / is different in the directory
+if os.name == 'posix':
+    slash = '/telebot/' 
+else:
+    slash = '\\'
+
+# Getting the currently working directory
+current_working_directory = os.getcwd()
+
+# Open the files for token and User ID
+token_file = open(current_working_directory + slash + 'token.txt', 'r')
+patientUser_file = open(current_working_directory + slash + 'patient_userID.txt', 'r')
+normUser_file = open(current_working_directory + slash + 'norm_userID.txt', 'r')
+
+# Obtain the token for the telebot and the user ID, then close the files
+pat_bot_ID = token_file.read()
+norm_user_IDs = normUser_file.read().split(',')
+pat_user_IDs = patientUser_file.read().split(',')
+token_file.close()
+normUser_file.close()
+patientUser_file.close()
+
+# Create bot
+pat_bot = telebot.TeleBot(token=pat_bot_ID)
+
+# Last sent message
+lastsent_time = datetime.now()
+
+# Limit frequency of messages
+seconds_from_last_msg = 10
+
+# ====== End Set up telegram bot ======
 
 # set up MQTT 
 client = mqtt.Client()
@@ -43,6 +81,21 @@ IntensityTmpVar = 0
 
 harmfulHEVMask = np.array([1,1,0,0,0,0],dtype=np.bool) # violet and blue are HEV
 
+def message_limiter(sendrequest_time, lastsent_time):
+    time_diff = sendrequest_time - lastsent_time
+    if time_diff.total_seconds() > seconds_from_last_msg:
+        return 1
+    else:
+        return 0
+
+def send_tele_message(userID_list, message):
+    global lastsent_time
+    messagesend_time = datetime.now()
+    if message_limiter(messagesend_time, lastsent_time):
+        lastsent_time = messagesend_time
+        for userID in userID_list:
+            pat_bot.send_message(userID, message)
+
 # screen vs natural light
 def identifyNaturalLight(lightValues):
     '''Takes in array of 6 frequencies from sensor; Outputs whether light is natural or artifical.'''
@@ -53,15 +106,15 @@ def identifyNaturalLight(lightValues):
 def checkHEVLevel(lightValues):
     harmfulHEVIntensity = sum(lightValues[harmfulHEVMask])/sum(lightValues)
     print(harmfulHEVIntensity)
-    if harmfulHEVIntensity > HEVThresholdValue:
-        print('Send Telgram HEV Alert!')
+    if (harmfulHEVIntensity > HEVThresholdValue):
+        send_tele_message(norm_user_IDs, 'High blue light intensity alert!')
     return harmfulHEVIntensity
 
 def checkIntensityLevel(lightValues):
     overallLightIntensity = min(sum(lightValues)/(5*maxSensorReading),1)
     print(overallLightIntensity)
-    if overallLightIntensity > LightThresholdValue:
-        print('Send Telegram Brightness Alert!')
+    if (overallLightIntensity > LightThresholdValue):
+        send_tele_message(norm_user_IDs, 'High light intensity alert!')
     return overallLightIntensity
 
 # process raw data

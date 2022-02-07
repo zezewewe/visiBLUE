@@ -127,3 +127,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+telebot_test.ipynb
+norm_userID.txt
+patient_userID.txt
+token.txt

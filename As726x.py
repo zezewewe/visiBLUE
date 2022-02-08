@@ -51,7 +51,7 @@ client = mqtt.Client()
 client.tls_set(ca_certs="mosquitto.org.crt",certfile="client.crt",keyfile="client.key")
 client.connect("test.mosquitto.org",port=8884) # returns 0 if successful
 
-MqttTopic = "IC.embedded/GOEL/test"
+MqttTopic = "IC.embedded/GOEL/sendDict"
 
 # set up I2C:
 from adafruit_as726x import AS726x_I2C
@@ -69,17 +69,19 @@ LightThresholdList = [0.3,0.6]
 HEVThresholdValue = HEVThresholdList[userDict[user]] 
 LightThresholdValue = LightThresholdList[userDict[user]]
 
-normalizedStdDevThresholdValue = 100 # param to decide natural or screen light
+normalizedStdDevThresholdValue = 0.2 # param to decide natural or screen light -> should be low
 maxSensorReading = 16000 # maximum value for sensor reading
 
-sensorReadFrequency = 1 # min
-piPublishFrequency = 15 # times
+sensorReadFrequency = 5 # seconds
+piPublishFrequency = 10 # times
 piCounter = 0
 
-HEVTmpVar = 0
-IntensityTmpVar = 0
+# HEVTmpVar = 0
+# IntensityTmpVar = 0
 
 harmfulHEVMask = np.array([1,1,0,0,0,0],dtype=np.bool) # violet and blue are HEV
+
+dataPackageDict={}
 
 def message_limiter(sendrequest_time, lastsent_time):
     time_diff = sendrequest_time - lastsent_time
@@ -97,10 +99,11 @@ def send_tele_message(userID_list, message):
             pat_bot.send_message(userID, message)
 
 # screen vs natural light
-def identifyNaturalLight(lightValues):
+def identifyArtificialLight(lightValues):
     '''Takes in array of 6 frequencies from sensor; Outputs whether light is natural or artifical.'''
     normalizedStdDev = np.std(lightValues)/np.mean(lightValues)
-    return normalizedStdDev < normalizedStdDevThresholdValue # True if Natural light
+    print(normalizedStdDev)
+    return int(normalizedStdDev > normalizedStdDevThresholdValue) # 1 if Artificial light
 
 # obtain HEV Level and Intensity Levels, and send Alerts if required
 def checkHEVLevel(lightValues):
@@ -120,23 +123,26 @@ def checkIntensityLevel(lightValues):
     return overallLightIntensity
 
 # process raw data
+''' 
+To be done on laptopClient
 def prepareData(harmfulHEVIntensity,overallLightIntensity):
     global HEVTmpVar, IntensityTmpVar
     HEVTmpVar = max(HEVTmpVar,harmfulHEVIntensity)
     IntensityTmpVar += overallLightIntensity
     print(HEVTmpVar,IntensityTmpVar)
-
+'''
 
 while True:
     # Wait for data to be ready
     while not sensor.data_ready:
         time.sleep(0.1)
-    timeNow = datetime.datetime.now().strftime("%d-%b-%y %H:%M")
+    timeNow = datetime.datetime.now().strftime("%d-%b-%y %H:%M:%S")
     piCounter += 1
     print(f"Count Value is now: {piCounter}.")
 
     lightValues = np.array([sensor.violet, sensor.blue, sensor.green, sensor.yellow, sensor.orange, sensor.red])
     print(lightValues)
+    # print(f"1 if Artificial {identifyArtificialLight(lightValues)}")
 
     # harmfulHEVIntensity = sum(lightValues[harmfulHEVMask])/sum(lightValues)
     # overallLightIntensity = min(sum(lightValues)/(5*maxSensorReading),1)
@@ -144,28 +150,33 @@ while True:
     # Check levels and send immediate alerts if required
     harmfulHEVIntensity=checkHEVLevel(lightValues)
     overallLightIntensity=checkIntensityLevel(lightValues)
+    artificialLightBool=identifyArtificialLight(lightValues)
     #print(f'Light Intensity: {overallLightIntensity}; HEV Intensity: {harmfulHEVIntensity}.\n')
 
     # Log and process data
-    prepareData(harmfulHEVIntensity,overallLightIntensity)
+    # prepareData(harmfulHEVIntensity,overallLightIntensity) #to be done on laptopClient?
     
-
+    dataPackageDict[piCounter]=[timeNow,harmfulHEVIntensity, overallLightIntensity, artificialLightBool]
+    print(len(dataPackageDict))
     if piCounter == piPublishFrequency:
+        '''
         dataPackageDict = {
             "TimeNow": timeNow,
             "HEVIntensity": HEVTmpVar,
             "LightIntensity": IntensityTmpVar,
         }
-        
+        '''
+        print(dataPackageDict)
+
         # publish data
         dataPackageJson = json.dumps(dataPackageDict)
         MSG_INFO = client.publish(MqttTopic,dataPackageJson)
         print('Published')
 
         # reset tmp variables
-        HEVTmpVar = 0
-        IntensityTmpVar = 0
+        # HEVTmpVar = 0
+        # IntensityTmpVar = 0
         piCounter = 0
-
+        dataPackageDict={}
     time.sleep(sensorReadFrequency)
 

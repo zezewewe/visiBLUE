@@ -6,7 +6,6 @@ import json
 import csv
 import sys
 
-
 Connected = False 
 
 broker_address = "test.mosquitto.org"
@@ -23,17 +22,23 @@ def on_connect(client, userdata, flags, rc):
     else:
         print("Connection failed")
 
-csv_columns = ['TimeNow', 'LightIntensity', 'HEVIntensity']
+# csv_columns = ['Time', 'HEVIntensity', 'LightIntensity', 'artificialLight']
 csv_file = 'dataLog.csv'
 
 # Callback function executes when message is received
 def on_message(client,userdata,message):
     print(f"Topic name: {message.topic}")
     payloadReceivedDict = json.loads(message.payload)
-    print(f"Time: {payloadReceivedDict['TimeNow']}\n")
-    with open('dataLog.csv','a',newline='') as f:
-        writer = csv.DictWriter(f, fieldnames=csv_columns)
-        writer.writerow(payloadReceivedDict)
+    print('Received Package')
+    # print(payloadReceivedDict)
+    
+    with open(csv_file,'a',newline='') as f:
+        w = csv.writer(f)
+        # w.writerow(payloadReceivedDict.keys())
+        # w.writerow([])
+        for values in payloadReceivedDict.values():
+            w.writerow(values)
+
 
 # Callback attribute of client instance points to our callback function
 client.on_connect = on_connect

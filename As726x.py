@@ -47,11 +47,11 @@ seconds_from_last_msg = 10
 # ====== End Set up telegram bot ======
 
 # set up MQTT 
-#client = mqtt.Client()
-#client.tls_set(ca_certs="mosquitto.org.crt",certfile="client.crt",keyfile="client.key")
-#client.connect("test.mosquitto.org",port=8884) # returns 0 if successful
+client = mqtt.Client()
+client.tls_set(ca_certs="mosquitto.org.crt",certfile="client.crt",keyfile="client.key")
+client.connect("test.mosquitto.org",port=8884) # returns 0 if successful
 
-#MqttTopic = "IC.embedded/GOEL/test"
+MqttTopic = "IC.embedded/GOEL/test"
 
 # set up I2C:
 from adafruit_as726x import AS726x_I2C
@@ -159,7 +159,7 @@ while True:
         
         # publish data
         dataPackageJson = json.dumps(dataPackageDict)
-        #MSG_INFO = client.publish(MqttTopic,dataPackageJson)
+        MSG_INFO = client.publish(MqttTopic,dataPackageJson)
         print('Published')
 
         # reset tmp variables

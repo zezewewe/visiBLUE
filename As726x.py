@@ -1,4 +1,5 @@
 
+
 # SPDX-FileCopyrightText: 2020 ladyada for Adafruit Industries
 # SPDX-License-Identifier: MIT
 
@@ -72,8 +73,8 @@ LightThresholdValue = LightThresholdList[userDict[user]]
 normalizedStdDevThresholdValue = 0.2 # param to decide natural or screen light -> should be low
 maxSensorReading = 16000 # maximum value for sensor reading
 
-sensorReadFrequency = 5 # seconds
-piPublishFrequency = 10 # times
+sensorReadFrequency = 2 # seconds
+piPublishFrequency = 5 # times
 piCounter = 0
 
 # HEVTmpVar = 0
@@ -102,24 +103,26 @@ def send_tele_message(userID_list, message):
 def identifyArtificialLight(lightValues):
     '''Takes in array of 6 frequencies from sensor; Outputs whether light is natural or artifical.'''
     normalizedStdDev = np.std(lightValues)/np.mean(lightValues)
-    print(normalizedStdDev)
-    return int(normalizedStdDev > normalizedStdDevThresholdValue) # 1 if Artificial light
+    print('normalizedStdDev',normalizedStdDev)
+    return [int(normalizedStdDev > normalizedStdDevThresholdValue),normalizedStdDev] # 1 if Artificial light
 
 # obtain HEV Level and Intensity Levels, and send Alerts if required
 def checkHEVLevel(lightValues):
     harmfulHEVIntensity = sum(lightValues[harmfulHEVMask])/sum(lightValues)
     print(harmfulHEVIntensity)
     if (harmfulHEVIntensity > HEVThresholdValue):
-        send_tele_message(norm_user_IDs, 'High blue light intensity alert!')
-        send_tele_message(pat_user_IDs, 'High blue light intensity alert!')
+        #send_tele_message(norm_user_IDs, 'High blue light intensity alert!')
+        #send_tele_message(pat_user_IDs, 'High blue light intensity alert!')
         #lastsent_time = messagesend_time
+        print('highbluelightintensityalert')
     return harmfulHEVIntensity
 
 def checkIntensityLevel(lightValues):
     overallLightIntensity = min(sum(lightValues)/(5*maxSensorReading),1)
     print(overallLightIntensity)
     if (overallLightIntensity > LightThresholdValue):
-        send_tele_message(norm_user_IDs, 'High light intensity alert!')
+        #send_tele_message(norm_user_IDs, 'High light intensity alert!')
+        print('highlightintensityalert')
     return overallLightIntensity
 
 # process raw data
@@ -150,13 +153,15 @@ while True:
     # Check levels and send immediate alerts if required
     harmfulHEVIntensity=checkHEVLevel(lightValues)
     overallLightIntensity=checkIntensityLevel(lightValues)
-    artificialLightBool=identifyArtificialLight(lightValues)
+    artificialLightBool=identifyArtificialLight(lightValues)[0]
+    normalizedStdDev=identifyArtificialLight(lightValues)[1]
     #print(f'Light Intensity: {overallLightIntensity}; HEV Intensity: {harmfulHEVIntensity}.\n')
 
     # Log and process data
     # prepareData(harmfulHEVIntensity,overallLightIntensity) #to be done on laptopClient?
     
-    dataPackageDict[piCounter]=[timeNow,harmfulHEVIntensity, overallLightIntensity, artificialLightBool]
+    dataPackageDict[piCounter]=[timeNow,harmfulHEVIntensity,overallLightIntensity, artificialLightBool,normalizedStdDev]
+    dataPackageDict[piCounter].extend(lightValues)
     print(len(dataPackageDict))
     if piCounter == piPublishFrequency:
         '''

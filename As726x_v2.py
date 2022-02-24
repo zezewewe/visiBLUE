@@ -214,7 +214,7 @@ while True:
     overallLightIntensity=checkIntensityLevel(lightValues)
     artificialLightBool=identifyArtificialLight(lightValues)[0]
 
-    craftAndSendTeleMsg(tebtw wleBlueList,teleLightList)
+    craftAndSendTeleMsg(teleBlueList,teleLightList)
 
     normalizedStdDev=identifyArtificialLight(lightValues)[1]
     #print(f'Light Intensity: {overallLightIntensity}; HEV Intensity: {harmfulHEVIntensity}.\n')

@@ -1,7 +1,7 @@
-from operator import truediv
+# from operator import truediv
 import time
 import datetime
-from turtle import hideturtle
+# from turtle import hideturtle
 import board
 import numpy as np
 import json

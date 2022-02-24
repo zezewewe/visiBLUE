@@ -5,8 +5,7 @@
         <meta name = "viewport" content = "width=device-width, initial-scale=1.0">
         <title>Light Values Visualisation</title>
         <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
-        <h1>Hi Jack! Here is your light exposure summary from the past {{time_range_text}}:</h1>
-
+        <h1>Hi Jack, here is your light exposure summary from the past {{time_range_text}}!</h1>
 
         <style type="text/css">
            #submit {
@@ -41,6 +40,8 @@
             </style>
     </head>
     <body>
+        <h4>Last updated at: {{date}}, {{last_collection_time}}</h4>
+        <h5>Click the coloured rectangles below to show/hide data</h6>
         <canvas id="line_chart" width="900" height="400"></canvas>
         <script>
             var ctx = document.getElementById("line_chart").getContext("2d");
@@ -53,21 +54,26 @@
                             label: "Harmful HEV Intensity",
                             data: {{harmful_values | safe}},
                             fill: false,
-                            borderColor: "#DE9E36",
+                            borderColor: "#4464AD",
+                            pointRadius: 1.5,
                             lineTension: 0.1
                         },
                         {
                             label: "Overall Light Intensity",
                             data: {{overall_values | safe}},
                             fill: false,
-                            borderColor: "#4464AD",
-                            lineTension: 0.1
+                            borderColor: "#DE9E36",
+                            lineTension: 0.1,
+                            pointRadius: 1.5,
+                            hidden: true
+
                         },
                         {
                             label: "Harmful HEV Threshold",
                             data: {{HEVthreshold_values | safe}},
                             fill: false,
                             borderColor: "#E63946",
+                            pointRadius: 0,
                             lineTension: 0.1
                         }
                     ]
@@ -79,8 +85,41 @@
         </script>
         <form method = "post" action="/">
             <input id="submit" type="submit" name="time_range_button" value="Last 15 mins">
+            <input id="submit" type="submit" name="time_range_button" value="Last 1 hour">
             <input id="submit" type="submit" name="time_range_button" value="Last 24 hours">
         </form>
+        <h3>{{recommendation_text}}</h3>
+        <h2>
+            In the past {{time_range_text}}: 
+        </h2>
+        
+        <h3>
+            You have been exposed to blue light {{bluelight_perc}}% of the time.<br>
+            Blue light exposure: 
+        </h3>
+        {% if bluelight_level == 'High' %}
+        <h2 style="color:Tomato">
+            {{bluelight_level}}
+        </h2>
+        {%else%}
+        <h2 style="color:rgb(0, 172, 9)">
+            {{bluelight_level}}
+        </h2>
+        {%endif%}
+        
+        <h3>
+            You have been exposed to overall light {{overalllight_perc}}% of the time.<br>
+            Overall light exposure:
+        </h3>
+        {% if overalllight_level == 'High' %}
+        <h2 style="color:Tomato">
+            {{overalllight_level}}
+        </h2>
+        {%else%}
+        <h2 style="color:rgb(0, 172, 9)">
+            {{overalllight_level}}
+        </h2>
+        {%endif%}
 
     </body>
 </html>

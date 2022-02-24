@@ -94,12 +94,12 @@ actuationTimeOut = 30 # seconds (just for demo)
 ##############################
 ###### Helper Functions ######
 ##############################
-time_pointer=datetime.datetime.now()-datetime.timedelta(minutes=10)
+time_pointer=datetime.datetime.now()-datetime.timedelta(seconds=10)
 def send_tele_message(tele_user_id, message):
     global time_pointer
     if datetime.datetime.now() >= time_pointer:
         bot_alert.send_message(tele_user_id, message)
-        time_pointer=datetime.datetime.now()+datetime.timedelta(minutes=10)
+        time_pointer=datetime.datetime.now()+datetime.timedelta(seconds=10)
         print('Tele Alert Sent')
 # screen vs natural light
 def identifyArtificialLight(lightValues):
@@ -178,7 +178,7 @@ class actuationOnOff:
         self.actuationEndTime = datetime.datetime.now()
         self.thresholdValue = thresholdValue
     def activateActuationAndSetEndTime(self):
-        self.actuationEndTime = datetime.datetime.now()+datetime.timedelta(minutes=actuationTimeOut)
+        self.actuationEndTime = datetime.datetime.now()+datetime.timedelta(seconds=actuationTimeOut)
         if not self.actuationOn:
             print(f'[ACTUATION] Activating visiBLUE {self.actuatorType} Filter')
             self.actuationOn = True

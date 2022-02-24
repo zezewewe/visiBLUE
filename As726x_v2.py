@@ -10,12 +10,10 @@ import telebot
 import os
 from adafruit_as726x import AS726x_I2C
 
-
 ###################################
 ####### Subscription Plan #########
 ###################################
 current_working_directory = os.getcwd()
-
 # Depending on OS type, the / is different in the directory
 if os.name == 'posix': 
     slash = '/' 
@@ -23,29 +21,25 @@ else:
     slash = '\\'
 
 # Obtain user info [clientID,subscriptionPlan,teleID,sleepHour,preSleepBuffer,doctorEmail]
-# Demo: # 116F - General; 227B - Insomniac; 338J - Sensitive 
+# Demo: # 116F - General; 227B - Insomniac; 338J - Sensitive
 userDetailsOpen = open(current_working_directory+slash+'userDetails.csv') 
 userDetailsRead = userDetailsOpen.read()
 userDict = {}
-
 isGeneral = isInsomniacs = isSensitive = False
-
-for i in userDetailsRead.split('\n'):
+for i in userDetailsRead.split('\n')[:-1]:
     user = i[:4] 
-    info = i[4:]
-
-    userDict[user]=info.split(',')[1:]
+    info = i[4:].split(',')[1:]
+    userDict[user]=info
     if info[0] == '0':
         isGeneral = True # Send dataPackage every 15 minutes
     elif info[0] == '1':
         isInsomniacs = True # send Telebot notification; Turn on glass filter (print line), Request for desired sleeping time 
         insomniac_tele_id = info[1]
-        sleepHour = info[2] # 24 hour format
-        preSleepBuffer = info[3] # hours
+        sleepHour = int(info[2]) # 24 hour format
+        preSleepBuffer = int(info[3]) # hours
     elif info[0] == '2':
         isSensitive = True # Turn on glass filter (print line)
         doctorEmail = info[4]
-
 
 ###################################
 ###### Set up telegram bot ########
@@ -54,43 +48,30 @@ for i in userDetailsRead.split('\n'):
 token_txt = open(os.path.join(current_working_directory,'telebot','token.txt'), 'r')
 bot_alert_id = token_txt.read()
 token_txt.close()
-# insomniac_txt = open(os.path.join(current_working_directory,'telebot',tele_id_path), 'r')
-# insomniac_tele_id = insomniac_txt.read().split(',')
-# insomniac_txt.close()
-
 # Create bot
 bot_alert = telebot.TeleBot(token=bot_alert_id)
-
 # Limit frequency of msgs
 tele_send_freq = 15 #minutes
 time_now = datetime.datetime.now()
 time_pointer = time_now - datetime.timedelta(minutes=tele_send_freq)
 seconds_from_last_msg = 30
-
-
 #########################
 ###### Set up MQTT ######
 #########################
 client = mqtt.Client()
 client.tls_set(ca_certs="mosquitto.org.crt",certfile="client.crt",keyfile="client.key")
 client.connect("test.mosquitto.org",port=8884) # returns 0 if successful
-
 MqttTopic = "IC.embedded/GOEL/sendDict"
-
-
 #########################
 ###### Set up I2C #######
 #########################
 i2c = board.I2C()
 sensor = AS726x_I2C(i2c)
 sensor.conversion_mode = sensor.MODE_2
-
-
 #############################
 ###### Tunable Params #######
 #############################
-harmfulHEVMask = np.array([1,1,0,0,0,0],dtype=np.bool) # violet and blue are HEV
-
+harmfulHEVMask = np.array([1,1,0,0,0,0],dtype=bool) # violet and blue are HEV
 # Set threshold values (user/doctor can adjust thresholds)
 if isGeneral:
     HEVThresholdValue = 0.4
@@ -100,30 +81,27 @@ elif isInsomniacs:
     LightThresholdValue = 0.3
 else:
     LightThresholdValue = 0.3 # or any other value prescribed by the doctor
-
 # Attempt to distinguish real vs artificial light
 normalizedStdDevThresholdValue = 0.2 # param to decide natural or screen light -> should be low
-
 maxSensorReading = 16000 # maximum value for sensor reading
-
 # Sensor reading frequency; Mqtt publishing frequency
 sensorReadFrequency = 5 # seconds
 piPublishFrequency = 10 # times
 piCounter = 0
-
 teleBlueList = [False,1000]
 teleLightList = [False,1000]
 dataPackageDict = {}
-
+actuationTimeOut=10 # minutes
 ##############################
 ###### Helper Functions ######
 ##############################
+time_pointer=datetime.datetime.now()-datetime.timedelta(minutes=10)
 def send_tele_message(tele_user_id, message):
-    if datetime.datetime.now() > (time_pointer + datetime.timedelta(minutes=10)):
+    global time_pointer
+    if datetime.datetime.now() >= time_pointer:
         bot_alert.send_message(tele_user_id, message)
-        time_pointer=datetime.datetime.now()
+        time_pointer=datetime.datetime.now()+datetime.timedelta(minutes=10)
         print('Tele Alert Sent')
-
 # screen vs natural light
 def identifyArtificialLight(lightValues):
     '''Takes in array of 6 frequencies from sensor; Outputs whether light is natural or artifical.'''
@@ -131,29 +109,28 @@ def identifyArtificialLight(lightValues):
     normalizedStdDev = np.std(lightValues)/np.mean(lightValues)
     # print('normalizedStdDev',normalizedStdDev)
     return [int(normalizedStdDev > normalizedStdDevThresholdValue),normalizedStdDev] # 1 if Artificial light
-
 def nearingSleep():
     # assume user sleeps before/at sleepHour
     hourNow = datetime.datetime.now().hour
     addOn=0
     if sleepHour<hourNow:
         addOn=24
-    if sleepHour+addOn-hourNow > preSleepBuffer:
+    if sleepHour+addOn-hourNow < preSleepBuffer:
         return True
     return False
-
 # obtain HEV Level and Intensity Levels, and send Alerts if required
 def checkHEVLevel(lightValues):
     harmfulHEVIntensity = sum(lightValues[harmfulHEVMask])/sum(lightValues)
     # print(harmfulHEVIntensity)
-
     # this only involves insomniacs and sensitives
     if (nearingSleep() and isInsomniacs) or isSensitive:
         # bad light
         if harmfulHEVIntensity > HEVThresholdValue:
+            print('128')
             if isInsomniacs: 
                 # add to tele msg alert
-                teleBlueList = [True,harmfulHEVIntensity]
+                teleBlueList[0] = True
+                teleBlueList[1] = harmfulHEVIntensity
             # turn on filter if not already on for both subscribers
             blueLightActuation.activateActuationAndSetEndTime() 
         else: 
@@ -161,20 +138,18 @@ def checkHEVLevel(lightValues):
     # keep filter off for insomniac subscribers if not yet sleeptime 
     if not nearingSleep() and isInsomniacs:
         blueLightActuation.deactivateActuation()
-
     return harmfulHEVIntensity
-
 def checkIntensityLevel(lightValues):
     overallLightIntensity = min(sum(lightValues)/(5*maxSensorReading),1)
     # print(overallLightIntensity)
-
     # this only involves insomniacs and sensitives
     if (nearingSleep() and isInsomniacs) or isSensitive:
         # bad light
         if overallLightIntensity > LightThresholdValue:
             if isInsomniacs:
                 # add to msg alert
-                teleLightList = [True, overallLightIntensity]
+                teleLightList[0] = True
+                teleLightList[1] = overallLightIntensity
             # turn on filter if not already on for both subscribers
             brightLightActuation.activateActuationAndSetEndTime()
         else:
@@ -182,40 +157,39 @@ def checkIntensityLevel(lightValues):
     # keep filter off for insomniac subscribers if not yet sleeptime
     if not nearingSleep() and isInsomniacs:
         brightLightActuation.deactivateActuation()
-        
     return overallLightIntensity
-
 def craftAndSendTeleMsg(teleBlueList,teleLightList):
-    teleHeaderStr = 'visiBLUE alert notification: \n '
-    
+    teleHeaderStr = 'visiBLUE alert notification \n'
     if teleBlueList[0] or teleLightList[0]:
         if teleBlueList[0]:
             teleBlueStr = f'Blue Intensity Exceeded: {teleBlueList[1]} \n '
+            teleHeaderStr = teleHeaderStr + teleBlueStr
         if teleLightList[0]:
             teleLightStr = f'Light Intensity Exceeded: {teleLightList[1]} \n '
-        send_tele_message(insomniac_tele_id, teleHeaderStr+teleBlueStr+teleLightStr)
+            teleHeaderStr = teleHeaderStr + teleLightStr
+        send_tele_message(insomniac_tele_id,teleHeaderStr)
         # reset tele msg
-        teleBlueStr = [False, 1000]
-        teleLightStr = [False, 1000]
-
+        teleBlueList = [False, 1000]
+        teleLightList = [False, 1000]
 class actuationOnOff:
     def __init__(self,actuatorType,thresholdValue):
         self.actuationOn = False # Actuation is off
         self.actuatorType = actuatorType
         self.actuationEndTime = datetime.datetime.now()
         self.thresholdValue = thresholdValue
-
     def activateActuationAndSetEndTime(self):
-        self.actuationEndTime = datetime.datetime.now()+datetime.timedelta(minutes=10)
+        self.actuationEndTime = datetime.datetime.now()+datetime.timedelta(minutes=actuationTimeOut)
         if not self.actuationOn:
             print(f'[ACTUATION] Activating visiBLUE {self.actuatorType} Filter')
             self.actuationOn = True
-                
     def deactivateActuation(self):
-        if not self.actuationOn:
-            if datetime.datetime.now()>self.actuationEndTime():
+        if self.actuationOn:
+            if datetime.datetime.now()>self.actuationEndTime:
                 print(f'[ACTUATION] Deactivating visiBLUE {self.actuatorType} Filter')
                 self.actuationOn = False
+    def killSwitch(self):
+        self.actuationOn = False
+        self.actuationEndTime = datetime.datetime.now()
 
 blueLightActuation = actuationOnOff('Blue Light',HEVThresholdValue)
 brightLightActuation = actuationOnOff('Bright Light',LightThresholdValue)
@@ -224,40 +198,40 @@ brightLightActuation = actuationOnOff('Bright Light',LightThresholdValue)
 ######################
 ###### visiBLUE ######
 ######################
-# while True:
-#     # Wait for data to be ready
-#     while not sensor.data_ready:
-#         time.sleep(0.1)
-#     timeNow = datetime.datetime.now().strftime("%d-%b-%y %H:%M:%S")
-#     piCounter += 1
-#     print(f"Packet {piCounter}/{piPublishFrequency}.")
+while True:
+    # Wait for data to be ready
+    while not sensor.data_ready:
+        time.sleep(0.1)
+    timeNow = datetime.datetime.now().strftime("%d-%b-%y %H:%M:%S")
+    piCounter += 1
+    print(f"Packet {piCounter}/{piPublishFrequency}.")
 
-#     lightValues = np.array([sensor.violet, sensor.blue, sensor.green, sensor.yellow, sensor.orange, sensor.red])
-#     # print(lightValues)
+    lightValues = np.array([sensor.violet, sensor.blue, sensor.green, sensor.yellow, sensor.orange, sensor.red])
+    # print(lightValues)
 
-#     # Check levels; send immediate alerts for insomniacs; adjust visiBLUE filter levels for insomniacs and sensitive
-#     harmfulHEVIntensity=checkHEVLevel(lightValues)
-#     overallLightIntensity=checkIntensityLevel(lightValues)
-#     artificialLightBool=identifyArtificialLight(lightValues)[0]
+    # Check levels; send immediate alerts for insomniacs; adjust visiBLUE filter levels for insomniacs and sensitive
+    harmfulHEVIntensity=checkHEVLevel(lightValues)
+    overallLightIntensity=checkIntensityLevel(lightValues)
+    artificialLightBool=identifyArtificialLight(lightValues)[0]
 
-#     craftAndSendTeleMsg(teleBlueList,teleLightList)
+    craftAndSendTeleMsg(teleBlueList,teleLightList)
 
-#     normalizedStdDev=identifyArtificialLight(lightValues)[1]
-#     #print(f'Light Intensity: {overallLightIntensity}; HEV Intensity: {harmfulHEVIntensity}.\n')
+    normalizedStdDev=identifyArtificialLight(lightValues)[1]
+    #print(f'Light Intensity: {overallLightIntensity}; HEV Intensity: {harmfulHEVIntensity}.\n')
 
-#     # prepare and send dataPackage for general and sensitive subscribers
-#     if isGeneral or isSensitive:
-#         dataPackageDict[piCounter]=[timeNow,harmfulHEVIntensity,overallLightIntensity,artificialLightBool,normalizedStdDev]
-#         # dataPackageDict[piCounter].extend(lightValues)
-#         # print(len(dataPackageDict))
-#         if piCounter == piPublishFrequency:
-#             # print(dataPackageDict)
-#             # publish data
-#             dataPackageJson = json.dumps(dataPackageDict)
-#             MSG_INFO = client.publish(MqttTopic,dataPackageJson)
-#             print('Published to laptop client')
+    # prepare and send dataPackage for general and sensitive subscribers
+    if isGeneral or isSensitive:
+        dataPackageDict[piCounter]=[timeNow,harmfulHEVIntensity,overallLightIntensity,artificialLightBool,normalizedStdDev]
+        dataPackageDict[piCounter].extend(lightValues)
+        # print(len(dataPackageDict))
+        if piCounter == piPublishFrequency:
+            print(dataPackageDict)
+            # publish data
+            dataPackageJson = json.dumps(dataPackageDict)
+            MSG_INFO = client.publish(MqttTopic,dataPackageJson)
+            print('Published to laptop client')
 
-#             piCounter = 0
-#             dataPackageDict={}
-#     time.sleep(sensorReadFrequency)
+            piCounter = 0
+            dataPackageDict={}
+    time.sleep(sensorReadFrequency)
 

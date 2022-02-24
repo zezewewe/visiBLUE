@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang = 'en'>
+    <head>
+        <meta charset = "UTF-8">
+        <meta name = "viewport" content = "width=device-width, initial-scale=1.0">
+        <title>Light Values Visualisation</title>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
+        <h1>Hi Jack! Here is your light exposure summary from the past {{time_range_text}}:</h1>
+
+
+        <style type="text/css">
+           #submit {
+            background-color: #4c64ea;
+            border-radius: 8px;
+            border-style: none;
+            box-sizing: border-box;
+            color: #FFFFFF;
+            cursor: pointer;
+            display: inline-block;
+            font-family: "Haas Grot Text R Web", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            height: 40px;
+            line-height: 20px;
+            list-style: none;
+            margin: 0;
+            outline: none;
+            padding: 10px 16px;
+            position: relative;
+            text-align: center;
+            text-decoration: none;
+            transition: color 100ms;
+            vertical-align: baseline;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            }
+            #submit:hover {
+                background-color: #3549aa;
+            }
+            </style>
+    </head>
+    <body>
+        <canvas id="line_chart" width="900" height="400"></canvas>
+        <script>
+            var ctx = document.getElementById("line_chart").getContext("2d");
+            var lineChart = new Chart(ctx, {
+                type: "line",
+                data: {
+                    labels: {{labels | safe}},
+                    datasets: [
+                        {
+                            label: "Harmful HEV Intensity",
+                            data: {{harmful_values | safe}},
+                            fill: false,
+                            borderColor: "#DE9E36",
+                            lineTension: 0.1
+                        },
+                        {
+                            label: "Overall Light Intensity",
+                            data: {{overall_values | safe}},
+                            fill: false,
+                            borderColor: "#4464AD",
+                            lineTension: 0.1
+                        },
+                        {
+                            label: "Harmful HEV Threshold",
+                            data: {{HEVthreshold_values | safe}},
+                            fill: false,
+                            borderColor: "#E63946",
+                            lineTension: 0.1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: false
+                }
+            })
+        </script>
+        <form method = "post" action="/">
+            <input id="submit" type="submit" name="time_range_button" value="Last 15 mins">
+            <input id="submit" type="submit" name="time_range_button" value="Last 24 hours">
+        </form>
+
+    </body>
+</html>

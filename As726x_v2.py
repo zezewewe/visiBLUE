@@ -51,10 +51,9 @@ token_txt.close()
 # Create bot
 bot_alert = telebot.TeleBot(token=bot_alert_id)
 # Limit frequency of msgs
-tele_send_freq = 15 #minutes
+tele_send_freq = 10 # seconds -> seconds (just for demo)
 time_now = datetime.datetime.now()
-time_pointer = time_now - datetime.timedelta(minutes=tele_send_freq)
-seconds_from_last_msg = 30
+time_pointer = time_now - datetime.timedelta(seconds=tele_send_freq)
 #########################
 ###### Set up MQTT ######
 #########################
@@ -91,7 +90,7 @@ piCounter = 0
 teleBlueList = [False,1000]
 teleLightList = [False,1000]
 dataPackageDict = {}
-actuationTimeOut=10 # minutes
+actuationTimeOut = 30 # seconds (just for demo)
 ##############################
 ###### Helper Functions ######
 ##############################
@@ -126,7 +125,7 @@ def checkHEVLevel(lightValues):
     if (nearingSleep() and isInsomniacs) or isSensitive:
         # bad light
         if harmfulHEVIntensity > HEVThresholdValue:
-            print('128')
+            print('[debug] HEV alert')
             if isInsomniacs: 
                 # add to tele msg alert
                 teleBlueList[0] = True
@@ -146,6 +145,7 @@ def checkIntensityLevel(lightValues):
     if (nearingSleep() and isInsomniacs) or isSensitive:
         # bad light
         if overallLightIntensity > LightThresholdValue:
+            print('[debug] HEV alert')
             if isInsomniacs:
                 # add to msg alert
                 teleLightList[0] = True
@@ -214,7 +214,7 @@ while True:
     overallLightIntensity=checkIntensityLevel(lightValues)
     artificialLightBool=identifyArtificialLight(lightValues)[0]
 
-    craftAndSendTeleMsg(teleBlueList,teleLightList)
+    craftAndSendTeleMsg(tebtw wleBlueList,teleLightList)
 
     normalizedStdDev=identifyArtificialLight(lightValues)[1]
     #print(f'Light Intensity: {overallLightIntensity}; HEV Intensity: {harmfulHEVIntensity}.\n')

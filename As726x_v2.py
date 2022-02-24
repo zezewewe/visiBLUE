@@ -51,9 +51,7 @@ token_txt.close()
 # Create bot
 bot_alert = telebot.TeleBot(token=bot_alert_id)
 # Limit frequency of msgs
-tele_send_freq = 10 # seconds -> seconds (just for demo)
-time_now = datetime.datetime.now()
-time_pointer = time_now - datetime.timedelta(seconds=tele_send_freq)
+tele_send_freq = 30 # seconds -> seconds (just for demo)
 #########################
 ###### Set up MQTT ######
 #########################
@@ -94,12 +92,12 @@ actuationTimeOut = 30 # seconds (just for demo)
 ##############################
 ###### Helper Functions ######
 ##############################
-time_pointer=datetime.datetime.now()-datetime.timedelta(seconds=10)
+time_pointer=datetime.datetime.now()-datetime.timedelta(seconds=tele_send_freq)
 def send_tele_message(tele_user_id, message):
     global time_pointer
     if datetime.datetime.now() >= time_pointer:
         bot_alert.send_message(tele_user_id, message)
-        time_pointer=datetime.datetime.now()+datetime.timedelta(seconds=10)
+        time_pointer=datetime.datetime.now()+datetime.timedelta(seconds=tele_send_freq)
         print('Tele Alert Sent')
 # screen vs natural light
 def identifyArtificialLight(lightValues):
@@ -145,7 +143,7 @@ def checkIntensityLevel(lightValues):
     if (nearingSleep() and isInsomniacs) or isSensitive:
         # bad light
         if overallLightIntensity > LightThresholdValue:
-            print('[debug] HEV alert')
+            print('[debug] Bright alert')
             if isInsomniacs:
                 # add to msg alert
                 teleLightList[0] = True

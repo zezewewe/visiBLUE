@@ -22,8 +22,8 @@ def on_connect(client, userdata, flags, rc):
     else:
         print("Connection failed")
 
-# csv_columns = ['Time', 'HEVIntensity', 'LightIntensity', 'artificialLight']
-csv_file = 'dataLog.csv'
+# csv_columns = ['Time', 'HEVIntensity', 'LightIntensity', 'artificialLightBool','normalizedStdDev']
+csv_file = 'dataLog4.csv'
 
 # Callback function executes when message is received
 def on_message(client,userdata,message):

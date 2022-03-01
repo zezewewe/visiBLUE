@@ -33,7 +33,7 @@ def prep_data(time_range_in_mins, filter_flag):
    # Import CSV
    df = pd.read_csv(data_directory)
 
-   # Shift everything down by 1, and make replace first row with column names
+   # Shift everything down by 1, and replace first row with column names
    df.index = df.index+1
    df.loc[0] = df.columns
    df.sort_index(inplace=True)
@@ -89,13 +89,18 @@ def prep_data(time_range_in_mins, filter_flag):
    else:
       data['Overall_overthresh_level'] = 'Low'
       data['recommendation_text'] += 'overall light exposure is low, great job!'
+
    return labels, data
 
-
+# By default, we will call this function which presents all the data
 @app.route('/', methods=['GET', 'POST'])
 def disp_graph_user():
    print(request.method)
+   
+   # If any of the time range buttons are pressed
    if request.method == 'POST':
+      
+      # We will specify the time range
       if request.form.get('time_range_button') == 'Last 15 mins':
          labels_data, values_data = prep_data(15,0)
          time_range_text = '15 mins'
@@ -107,9 +112,12 @@ def disp_graph_user():
          labels_data, values_data = prep_data(60,0)
          time_range_text = '1 hour'
 
+   # Else, by default we will show 1 hour worth of data
    elif request.method == 'GET':
       time_range_text = '1 hour'
       labels_data, values_data = prep_data(60,0)
+
+   # Return a response with the summary_simplified html template
    return render_template('summary.html', \
       labels=labels_data['Label_values'], \
       harmful_values=values_data['HEV_values'], \
@@ -123,13 +131,19 @@ def disp_graph_user():
       overalllight_perc =  values_data['Overall_overthresh_perc'],\
       bluelight_level = values_data['HEV_overthresh_level'],\
       overalllight_level = values_data['Overall_overthresh_level'],\
-      recommendation_text = values_data['recommendation_text']
+      recommendation_text = values_data['recommendation_text'],\
+      time_range_action = "\\"
       )
 
+# If requested, we will call this function which presents only the data that are above the threshold
 @app.route('/simplified', methods=['GET', 'POST'])
 def disp_graph_user_simplified():
    print(request.method)
+   
+   # If any of the time range buttons are pressed
    if request.method == 'POST':
+      
+      # We will specify the time range
       if request.form.get('time_range_button') == 'Last 15 mins':
          labels_data, values_data = prep_data(15,1)
          time_range_text = '15 mins'
@@ -137,14 +151,18 @@ def disp_graph_user_simplified():
       elif request.form.get('time_range_button') == 'Last 24 hours':
          labels_data, values_data = prep_data(60*24,1)
          time_range_text = '24 hours'
+
       elif request.form.get('time_range_button') == 'Last 1 hour':
          labels_data, values_data = prep_data(60,1)
          time_range_text = '1 hour'
-
+   
+   # Else, by default we will show 1 hour worth of data
    elif request.method == 'GET':
       time_range_text = '1 hour'
       labels_data, values_data = prep_data(60,1)
-   return render_template('summary_simplified.html', \
+
+   # Return a response with the summary_simplified html template
+   return render_template('summary.html', \
       labels=labels_data['Label_values'], \
       harmful_values=values_data['HEV_values'], \
       overall_values=values_data['Overall_values'], \
@@ -157,7 +175,8 @@ def disp_graph_user_simplified():
       overalllight_perc =  values_data['Overall_overthresh_perc'],\
       bluelight_level = values_data['HEV_overthresh_level'],\
       overalllight_level = values_data['Overall_overthresh_level'],\
-      recommendation_text = values_data['recommendation_text']
+      recommendation_text = values_data['recommendation_text'], \
+      time_range_action = "\\simplified"
       )
 
 if __name__ == '__main__':

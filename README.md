@@ -1,7 +1,7 @@
 # [VisiBLUE *Smart glasses that keep an eye out of you*](https://yeungken.wixsite.com/visiblue)
 
 ## Project Description
-VisiBLUE is an IoT connected digital healthcare service that takes care of the eyes of our clients. It makes use of an As726x spectral sensor interfaced with a Raspberry Pi Zero. Through the sensor, the smart VisiBLUE glasses will make decisions on whether our users are exposed too high amounts of light or too high amounts of Harmful Energy Visible Light (HEV). 
+VisiBLUE is an IoT connected digital healthcare service that takes care of the eyes of our clients. It makes use of an As726x spectral sensor interfaced with a Raspberry Pi Zero. Through the sensor, the smart VisiBLUE glasses will make decisions on whether our users are exposed to too high amounts of light or too high amounts of Harmful Energy Visible Light (HEV). 
 
 
 Depending on the type of subscriptions our users are enrolled to, the following steps may be taken: 
@@ -14,7 +14,7 @@ Future work for this project may include the use of lightweight machine learning
 
 ## Structure of this Repo
 The Raspberry Pi is set up as such with the As726x sensor: 
-![image](.\rapsberryPi_setup_diagram.jpg)
+![image](./rapsberryPi_setup_diagram.jpg)
 
 There are three parts to this repo: 
 1. piHost 

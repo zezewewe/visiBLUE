@@ -4,6 +4,7 @@
         <meta charset = "UTF-8">
         <meta name = "viewport" content = "width=device-width, initial-scale=1.0">
         <title>Light Exposure Summary</title>
+        <!-- <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.min.js"></script> -->
         <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
         <h1>Hi Jack, here is your light exposure summary from the past {{time_range_text}}!</h1>
 
@@ -42,9 +43,10 @@
     <body>
         <h4>Last updated at: {{date}}, {{last_collection_time}}</h4>
         <h5>Click the coloured rectangles below to show/hide data</h6>
-        <canvas id="line_chart" width="900" height="400"></canvas>
-        <script>
+        <canvas id="line_chart" width="800" height="400"></canvas>
+        <script>            
             var ctx = document.getElementById("line_chart").getContext("2d");
+            
             var lineChart = new Chart(ctx, {
                 type: "line",
                 data: {
@@ -63,9 +65,9 @@
                             data: {{overall_values | safe}},
                             fill: false,
                             borderColor: "#DE9E36",
-                            lineTension: 0.1,
-                            pointRadius: 1.5,
-                            hidden: true
+                            lineTension: 0,
+                            pointRadius: 0,
+                            hidden: true,
 
                         },
                         {
@@ -74,21 +76,29 @@
                             fill: false,
                             borderColor: "#E63946",
                             pointRadius: 0,
-                            lineTension: 0.1
+                            lineTension: 0
                         }
                     ]
                 },
+                
                 options: {
                     responsive: false,
-                    legend:{
-                        labels:{
-                            filter: function(item, chart){
-                                 return !item.text.includes('Harmful HEV Threshold');
+                    hover: {
+                            mode: 'nearest',
+                            intersect: false
+                            },
+                            tooltips: {
+                            mode: 'nearest',
+                            intersect: false,
+                            callbacks: {
+                                label: function(tooltipItem, data) {
+                                    return tooltipItem.yLabel.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+                                    }
+                                }
                             }
-                        }
-                    }
                 }
             })
+
         </script>
         <form method = "post" action="/">
             <input id="submit" type="submit" name="time_range_button" value="Last 15 mins">
@@ -101,7 +111,7 @@
         </h2>
         
         <h3>
-            You have been exposed to blue light {{bluelight_perc}}% of the time.<br>
+            You have been exposed to high amounts of blue light {{bluelight_perc}}% of the time.<br>
             Blue light exposure: 
         </h3>
         {% if bluelight_level == 'High' %}
@@ -115,7 +125,7 @@
         {%endif%}
         
         <h3>
-            You have been exposed to overall light {{overalllight_perc}}% of the time.<br>
+            You have been exposed to high amounts of overall light <strong>{{overalllight_perc}}%</strong> of the time.<br>
             Overall light exposure:
         </h3>
         {% if overalllight_level == 'High' %}

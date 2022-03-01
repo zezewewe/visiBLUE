@@ -1,21 +1,33 @@
 from flask import Flask, render_template, request
 import pandas as pd
+import numpy as np
 import os
+from scipy.ndimage import gaussian_filter1d
 
 app = Flask(__name__)
 
-def prep_data(time_range_in_mins, include_bluelight_flag, include_ambientlight_flag, user):
+# Design the Gaussian filter
+def gaussian_filter_1d(sigma):
+    # sigma: the parameter sigma in the Gaussian kernel (unit: pixel)
+    #
+    # return: a 1D array for the Gaussian kernel
+    size = 3*sigma #ignore values outside of 3*sigma
+    h = np.ones(2*size) 
+    for x in range(-size,size):
+        h[x+size] = (1/(np.sqrt(2*np.pi)*sigma))*np.exp(-(np.square(x)/(2*np.square(sigma))))
+    return h
+
+def prep_data(time_range_in_mins, include_bluelight_flag, include_ambientlight_flag):
    # Set threshold for displaying
-   if user == 0:
-      Overallthreshold = 0.9
-      HEVthreshold = 0.4
-   elif user == 1:
-      Overallthreshold = 0.9
-      HEVthreshold = 0.2
+   Overallthreshold = 0.6
+   HEVthreshold = 0.4
 
    # Get current directory
-   current_directory = os.getcwd()
-   data_directory = current_directory+'\data\dataLog3.csv'
+   current_directory_split = os.getcwd().split('\\')
+   data_directory = ''
+   for i in current_directory_split[:-1]: # get the embeddedsys folder
+      data_directory += i + '\\'
+   data_directory = data_directory + 'datalog.csv'
 
    # Import CSV
    df = pd.read_csv(data_directory)
@@ -37,11 +49,16 @@ def prep_data(time_range_in_mins, include_bluelight_flag, include_ambientlight_f
    df = df.loc[((time_of_last_collection - df.timeNow).dt.total_seconds()/60) < time_range_in_mins].copy()
    
 
+
+   # Gaussian filter the data
+   df['harmfulHEVIntensity'] = gaussian_filter1d(df['harmfulHEVIntensity'].values, 5)
+   df['overallLightIntensity'] = gaussian_filter1d(df['overallLightIntensity'].values, 5)
+
    # Generate list data
    data = {}
    labels = {}
-   harmfulHEVIntensity_data = list(df['harmfulHEVIntensity'])
-   overallLightIntensity_data = list(df['overallLightIntensity'])
+   harmfulHEVIntensity_data = list(df['harmfulHEVIntensity'].round(8))
+   overallLightIntensity_data = list(df['overallLightIntensity'].round(8))
    data['HEV_values'] = harmfulHEVIntensity_data
    data['Overall_values'] = overallLightIntensity_data
    data['Threshold_values'] = [HEVthreshold for x in harmfulHEVIntensity_data]
@@ -76,19 +93,19 @@ def disp_graph_user1():
    print(request.method)
    if request.method == 'POST':
       if request.form.get('time_range_button') == 'Last 15 mins':
-         labels_data, values_data = prep_data(15,0,0,0)
+         labels_data, values_data = prep_data(15,0,0)
          time_range_text = '15 mins'
 
       elif request.form.get('time_range_button') == 'Last 24 hours':
-         labels_data, values_data = prep_data(60*24,0,0,0)
+         labels_data, values_data = prep_data(60*24,0,0)
          time_range_text = '24 hours'
       elif request.form.get('time_range_button') == 'Last 1 hour':
-         labels_data, values_data = prep_data(60,0,0,0)
+         labels_data, values_data = prep_data(60,0,0)
          time_range_text = '1 hour'
 
    elif request.method == 'GET':
       time_range_text = '1 hour'
-      labels_data, values_data = prep_data(60,0,0,0)
+      labels_data, values_data = prep_data(60,0,0)
    return render_template('summary.html', \
       labels=labels_data['Label_values'], \
       harmful_values=values_data['HEV_values'], \

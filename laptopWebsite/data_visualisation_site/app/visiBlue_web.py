@@ -7,17 +7,6 @@ from scipy.ndimage import gaussian_filter1d
 
 app = Flask(__name__)
 
-# Design the Gaussian filter
-def gaussian_filter_1d(sigma):
-    # sigma: the parameter sigma in the Gaussian kernel (unit: pixel)
-    #
-    # return: a 1D array for the Gaussian kernel
-    size = 3*sigma #ignore values outside of 3*sigma
-    h = np.ones(2*size) 
-    for x in range(-size,size):
-        h[x+size] = (1/(np.sqrt(2*np.pi)*sigma))*np.exp(-(np.square(x)/(2*np.square(sigma))))
-    return h
-
 def prep_data(time_range_in_mins, filter_flag):
    # Set threshold for displaying
    Overallthreshold = 0.6

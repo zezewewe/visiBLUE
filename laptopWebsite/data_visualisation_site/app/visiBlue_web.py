@@ -26,9 +26,9 @@ def prep_data(time_range_in_mins, filter_flag):
    # Get current directory
    current_directory_split = os.getcwd().split('\\')
    data_directory = ''
-   for i in current_directory_split[:]: # get the embeddedsys folder
+   for i in current_directory_split[:-1]: # get the embeddedsys folder
       data_directory += i + '\\'
-   data_directory = data_directory + 'datalog3.csv'
+   data_directory = data_directory + 'laptopClient\\datalog.csv'
 
    # Import CSV
    df = pd.read_csv(data_directory)

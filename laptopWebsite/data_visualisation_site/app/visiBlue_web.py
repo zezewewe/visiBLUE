@@ -105,9 +105,6 @@ def disp_graph_user():
          labels_data, values_data = prep_data(15,0)
          time_range_text = '15 mins'
 
-      elif request.form.get('time_range_button') == 'Last 24 hours':
-         labels_data, values_data = prep_data(60*24,0)
-         time_range_text = '24 hours'
       elif request.form.get('time_range_button') == 'Last 1 hour':
          labels_data, values_data = prep_data(60,0)
          time_range_text = '1 hour'
@@ -147,10 +144,6 @@ def disp_graph_user_simplified():
       if request.form.get('time_range_button') == 'Last 15 mins':
          labels_data, values_data = prep_data(15,1)
          time_range_text = '15 mins'
-
-      elif request.form.get('time_range_button') == 'Last 24 hours':
-         labels_data, values_data = prep_data(60*24,1)
-         time_range_text = '24 hours'
 
       elif request.form.get('time_range_button') == 'Last 1 hour':
          labels_data, values_data = prep_data(60,1)

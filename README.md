@@ -13,7 +13,7 @@ Depending on the type of subscriptions our users are enrolled to, the following 
 Future work for this project may include the use of lightweight machine learning models (e.g. Logistic Regression/SVM) to perform binary classification between natural and artifical light. This will give us the abiltity to generate more accurate alerts and filter actuations for users. This is because we acknowledge that high light intensities and strong HEV intensities due to natural light may sometimes be unavoidable. 
 
 ## Structure of this Repo
-The Raspberry Pi is set up as such with the As726x sensor: 
+The Raspberry Pi is set up as such with the As726x sensor:
 ![image](./rapsberryPi_setup_diagram.jpg)
 
 There are three parts to this repo: 

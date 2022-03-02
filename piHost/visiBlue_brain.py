@@ -51,7 +51,7 @@ token_txt.close()
 # Create bot
 bot_alert = telebot.TeleBot(token=bot_alert_id)
 # Limit frequency of msgs
-tele_send_freq = 30 # seconds -> seconds (just for demo)
+tele_send_freq = 60 # seconds -> seconds (just for demo)
 
 
 #########################
@@ -175,15 +175,17 @@ def craftAndSendTeleMsg(teleBlueList,teleLightList):
     teleHeaderStr = 'visiBLUE alert notification: \n'
     if teleBlueList[0] or teleLightList[0]:
         if teleBlueList[0]:
-            teleBlueStr = f'Blue Intensity Exceeded: {teleBlueList[1]}. \n '
+            teleBlueStr = f'Blue Intensity Exceeded: {round(teleBlueList[1],2)}. \n '
             teleHeaderStr = teleHeaderStr + teleBlueStr
         if teleLightList[0]:
-            teleLightStr = f'Light Intensity Exceeded: {teleLightList[1]} \n '
+            teleLightStr = f'Light Intensity Exceeded: {round(teleLightList[1],2)} \n '
             teleHeaderStr = teleHeaderStr + teleLightStr
         send_tele_message(insomniac_tele_id,teleHeaderStr)
         # reset tele msg
-        teleBlueList = [False, 1000]
-        teleLightList = [False, 1000]
+        teleBlueList[0] = False
+        teleBlueList[1] = 1000
+        teleLightList[0] = False
+        teleLightList[1] = 1000
 
 class actuationOnOff:
     def __init__(self,actuatorType,thresholdValue):

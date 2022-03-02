@@ -1,7 +1,7 @@
 # [VisiBLUE *Smart glasses that keep an eye out of you*](https://yeungken.wixsite.com/visiblue)
 
 ## Project Description
-VisiBLUE is an IoT connected digital healthcare service that takes care of the eyes of our clients. It makes use of an As726x spectral sensor interfaced with a Raspberry Pi Zero. Through the sensor, the smart VisiBLUE glasses will make decisions on whether our users are exposed to too high amounts of light or too high amounts of Harmful Energy Visible Light (HEV). 
+VisiBLUE is an IoT connected digital healthcare service that takes care of the eyes of our clients. It makes use of an As726x spectral sensor interfaced with a Raspberry Pi Zero. Through the sensor, the smart VisiBLUE glasses will make decisions on whether our users are exposed to too high amounts of light or too high amounts of High Energy Visible Light (HEV), which studies have found to be more damaging to eyes due to its high energy. 
 
 
 Depending on the type of subscriptions our users are enrolled to, the following steps may be taken: 
@@ -18,7 +18,7 @@ The Raspberry Pi is set up as such with the As726x sensor:
 
 There are three parts to this repo: 
 1. piHost 
-visiBlue_brain.py periodically (every x seconds) takes in sensor readings, and process them according to a variable threshold. Depending on the user, it will then make decisions, such as whether to activate the respective filters in the smart glasses, or whether to send the user a telegram alert, or whether to log the data in a server for long-term trend analysis of a users light-exposure history. This data is transmitted through MQTT to the local laptop client server.
+visiBlue_brain.py periodically (every x seconds) takes in sensor readings, and processes them according to a variable threshold. Depending on the subscription enrolled by the user, it will then make decisions, such as whether to activate the respective filters in the smart glasses, or whether to send the user a telegram alert, or whether to log the data in a server for long-term trend analysis of a users light-exposure history. This data is transmitted through MQTT to the local laptop client server.
 
 2. laptopClient 
 visiBlue_receiver.py subscribes to the data sent periodically (every 10x seconds)
